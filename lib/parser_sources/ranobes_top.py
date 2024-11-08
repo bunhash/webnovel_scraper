@@ -21,7 +21,7 @@ class Parser:
         story_div = driver.wait_for_class_name('r-fullstory-s1')
         title_h1 = story_div.find_element(By.CLASS_NAME, 'title')
         title_span = title_h1.find_element(By.XPATH, './/span[1]')
-        return title_span.text
+        return title_span.text.strip()
 
     @staticmethod
     def get_author(driver):

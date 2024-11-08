@@ -29,6 +29,6 @@ switch -Exact ($Command)
     'info' { python $libDir\get_book_info.py $args[2] }
     'download' { python $LibDir\download.py }
     'parse' { python $LibDir\parse_chapters.py }
-    'build' { python $LibDir\make_book.py }
+    'build' {python $LibDir\make_book.py }
     Default { print_usage }
 }

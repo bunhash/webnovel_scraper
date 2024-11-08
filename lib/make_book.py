@@ -3,12 +3,11 @@
 # @author bunhash
 # @email bunhash@bhmail.me
 #
-# Makes the EPUB and AZW3 from the parsed chapters
+# Makes the EPUB from the parsed chapters
 #
 
 from ebooklib import epub
 import os
-import subprocess
 import sys
 import uuid
 
@@ -113,7 +112,8 @@ def buildEpub(title, author, chapterInfo, cover_img=None, gen_toc=True):
 
     # create epub file
     epub.write_epub('{}.epub'.format(title), book, {})
-    subprocess.run(['ebook-convert', '{}.epub'.format(title), '{}.azw3'.format(title), '--no-inline-toc'], shell=True, check=True)
+    if os.name == 'nt':
+        subprocess.run(['ebook-convert.exe', '{}.epub'.format(title), '{}.azw3'.format(title), '--no-inline-toc'], shell=True, check=True)
 
 if __name__ == '__main__':
 	main(sys.argv[1:])

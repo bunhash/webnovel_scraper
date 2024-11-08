@@ -35,6 +35,7 @@ case "${COMMAND}" in
         ;;
     build)
         python "${LIB_DIR}/make_book.py"
+        ebook-convert "$(head -n1 bookinfo.txt).epub" "$(head -n1 bookinfo.txt).azw3" --no-inline-toc
         ;;
     *)
         print_usage

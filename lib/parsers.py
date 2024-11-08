@@ -12,6 +12,8 @@ import urllib.parse
 PARSERS = {
     'www.ranobes.top' : 'ranobes_top',
     'ranobes.top' : 'ranobes_top',
+    'www.royalroad.com' : 'royalroad_com',
+    'royalroad.com' : 'royalroad_com',
 }
 
 class UnknownDomain(Exception):
