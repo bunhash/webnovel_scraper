@@ -36,17 +36,17 @@ class Driver:
     def page_source(self):
         return self._driver.page_source.encode('utf-8', errors='ignore')
 
-    def wait_for(self, tup, timeout=10):
+    def wait_for(self, tup, timeout=30):
         return WebDriverWait(self._driver, timeout).until(EC.presence_of_element_located(tup))
 
-    def wait_for_tag(self, tag, timeout=10):
+    def wait_for_tag(self, tag, timeout=30):
         return self.wait_for((By.TAG_NAME, tag), timeout=timeout)
 
-    def wait_for_class_name(self, name, timeout=10):
+    def wait_for_class_name(self, name, timeout=30):
         return self.wait_for((By.CLASS_NAME, name), timeout=timeout)
 
-    def wait_for_id(self, el_id, timeout=10):
+    def wait_for_id(self, el_id, timeout=30):
         return self.wait_for((By.ID, el_id), timeout=timeout)
 
-    def wait_for_xpath(self, xpath, timeout=10):
+    def wait_for_xpath(self, xpath, timeout=30):
         return self.wait_for((By.XPATH, xpath), timeout=timeout)

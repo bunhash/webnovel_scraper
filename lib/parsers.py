@@ -14,6 +14,8 @@ PARSERS = {
     'ranobes.top' : 'ranobes_top',
     'www.royalroad.com' : 'royalroad_com',
     'royalroad.com' : 'royalroad_com',
+    'www.scribblehub.com' : 'scribblehub_com',
+    'scribblehub.com' : 'scribblehub_com',
 }
 
 class UnknownDomain(Exception):
