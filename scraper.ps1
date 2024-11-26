@@ -8,9 +8,9 @@
 
 $SrcPath = $script:MyInvocation.MyCommand.Path
 $SrcDir = Split-Path -Parent $SrcPath
-$LibDir = $SrcDir\lib
-$VenvDir = $SrcDir\venv
-. $VenvDir\activate.ps1
+$LibDir = "$SrcDir\lib"
+$VenvDir = "$SrcDir\venv"
+. $VenvDir\Scripts\activate.ps1
 
 function print_usage
 {
@@ -23,12 +23,14 @@ function print_usage
     echo "  build         Builds the books"
 }
 
-$Command = $args[1]
+$Command = $args[0]
 switch -Exact ($Command)
 {
-    'info' { python $libDir\get_book_info.py $args[2] }
-    'download' { python $LibDir\download.py }
-    'parse' { python $LibDir\parse_chapters.py }
+    'info' { python $libDir\get_book_info.py $args[1] }
+    'download' { type .\urlcache.txt | python $LibDir\download.py }
+    'parse' { type .\urlcache.txt | python $LibDir\parse_chapters.py }
     'build' {python $LibDir\make_book.py }
     Default { print_usage }
 }
+
+deactivate

@@ -8,6 +8,7 @@
 
 from ebooklib import epub
 import os
+import subprocess
 import sys
 import uuid
 
