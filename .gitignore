@@ -1,5 +1,6 @@
 # created by virtualenv automatically
 __pycache__/
+**/__pycache__/
 **.pyc
 Books/
 venv/
