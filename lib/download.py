@@ -13,11 +13,22 @@ import parsers
 import sys
 import time
 
+def read_lines(filename):
+    lines = list()
+    with open(filename, 'r') as ifile:
+        for line in ifile:
+            line = line.strip()
+            if not line: continue
+            lines.append(line)
+    return lines
+
 def main(args):
-    # Read URLs from stdin
-    urls = list()
-    for line in sys.stdin:
-        urls.append(line.strip())
+    if not os.path.exists('urlcache.txt'):
+        print('No urlcache.txt found', file=sys.stderr)
+        sys.exit(1)
+
+    # Read URLs from urlcache.txt
+    urls = read_lines('urlcache.txt')
     
     # Create staging directory
     if not os.path.exists('staging'):
@@ -39,9 +50,10 @@ def main(args):
                 raise Exception('no filename found')
             staging_file = os.path.join('staging', filename)
             if not os.path.exists(staging_file):
+                time.sleep(random.randrange(10, 200) / 100)
+                page = Parser.get_chapter(driver, urls[i])
                 with open(staging_file, 'wb') as ofile:
-                    time.sleep(random.randrange(10, 200) / 100)
-                    ofile.write(Parser.get_chapter(driver, urls[i]))
+                    ofile.write(page)
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    main(sys.argv[1:])

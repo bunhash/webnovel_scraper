@@ -16,6 +16,7 @@ print_usage() {
     echo ""
     echo "COMMANDS"
     echo "  info [URL]    Gets the book info"
+    echo "  crawl         Downloads the chapters by crawling"
     echo "  download      Downloads the chapters"
     echo "  parse         Parses the chapters"
     echo "  build         Builds the books"
@@ -26,6 +27,9 @@ shift
 case "${COMMAND}" in
     info)
         python "${LIB_DIR}/get_book_info.py" "$@"
+        ;;
+    crawl)
+        python "${LIB_DIR}/crawl.py" "$@"
         ;;
     download)
         python "${LIB_DIR}/download.py"

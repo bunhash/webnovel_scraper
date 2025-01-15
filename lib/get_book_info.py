@@ -32,7 +32,7 @@ def main(args):
     # Ensure there's a URL
     if len(url) == 0:
         print('Usage:', sys.argv[0], '<URL>')
-        return 1
+        sys.exit(1)
 
     # Load the parser
     Parser = parsers.get_parser_by_url(url)
@@ -64,7 +64,5 @@ def main(args):
         for chapter_url in chapters:
             ofile.write(f'{chapter_url}\n')
 
-    return 0
-
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    main(sys.argv[1:])

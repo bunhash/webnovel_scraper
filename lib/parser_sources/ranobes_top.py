@@ -105,3 +105,14 @@ class Parser:
         
         # Return chapter title and chapter html
         return title.encode('utf-8', errors='ignore'), chapter.encode('utf-8', errors='ignore')
+
+    @staticmethod
+    def next_page(html):
+        soup = BeautifulSoup(html, 'lxml')
+        link = soup.find('a', {'id' : 'next'})
+        if link:
+            url = link['href']
+            if 'https://' not in url:
+                return f'https://www.ranobes.top{url}'
+            return url
+        return None

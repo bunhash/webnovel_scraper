@@ -18,6 +18,7 @@ function print_usage
     echo ""
     echo "COMMANDS"
     echo "  info [URL]    Gets the book info"
+    echo "  crawl         Downloads the chapters by crawling"
     echo "  download      Downloads the chapters"
     echo "  parse         Parses the chapters"
     echo "  build         Builds the books"
@@ -27,8 +28,9 @@ $Command = $args[0]
 switch -Exact ($Command)
 {
     'info' { python $libDir\get_book_info.py $args[1] }
-    'download' { type .\urlcache.txt | python $LibDir\download.py }
-    'parse' { type .\urlcache.txt | python $LibDir\parse_chapters.py }
+    'crawl' { python $LibDir\crawl.py $args[1] }
+    'download' { python $LibDir\download.py }
+    'parse' { python $LibDir\parse_chapters.py }
     'build' {python $LibDir\make_book.py }
     Default { print_usage }
 }

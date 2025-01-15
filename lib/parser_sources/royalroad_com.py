@@ -100,3 +100,16 @@ class Parser:
         
         # Return chapter title and chapter html
         return title.encode('utf-8', errors='ignore'), chapter.encode('utf-8', errors='ignore')
+
+    @staticmethod
+    def next_page(html):
+        soup = BeautifulSoup(html, 'lxml')
+        nav_el = soup.find('div', {'class' : 'nav-buttons'})
+        if nav_el:
+            links = nav_el.find_all('a')
+            if links and 'Next' in links[-1].text:
+                url = links[-1]['href']
+                if 'https://' not in url:
+                    return f'https://www.royalroad.com{url}'
+                return url
+        return None

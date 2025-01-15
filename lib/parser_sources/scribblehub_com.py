@@ -97,3 +97,16 @@ class Parser:
         
         # Return chapter title and chapter html
         return title.encode('utf-8', errors='ignore'), chapter.encode('utf-8', errors='ignore')
+
+    @staticmethod
+    def next_page(html):
+        soup = BeautifulSoup(html, 'lxml')
+        link = soup.find('a', {'class' : 'btn-next'})
+        if link:
+            if 'disabled' in link['class']:
+                return None
+            url = link['href']
+            if 'https://' not in url:
+                return f'https://www.scribblehub.com{url}'
+            return url
+        return None

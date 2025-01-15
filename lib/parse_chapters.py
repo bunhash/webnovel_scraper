@@ -12,6 +12,9 @@ import multiprocessing
 import parsers
 
 def main(args):
+    if not os.path.exists('urlcache.txt'):
+        print('No urlcache.txt found', file=sys.stderr)
+        sys.exit(1)
 
     if not os.path.exists('book'):
         os.mkdir('book')
@@ -21,21 +24,22 @@ def main(args):
     try:
         # Create the parsing jobs
         count = 0
-        for line in sys.stdin:
-            url = line.strip()
-            if not url:
-                continue
-            count = count + 1
-            raw_filename = os.path.join('staging', url.rstrip('/').split('/')[-1])
-            if not raw_filename:
-                print('Bad raw_filename:', url, file=sys.stderr)
-                continue
-            if not os.path.exists(raw_filename):
-                print('File does not exist:', raw_filename, file=sys.stderr)
-                continue
-            parsed_filename = os.path.join('book', '{:04d}.html'.format(count))
-            Parser = parsers.get_parser_by_url(url)
-            jobs.append((raw_filename, pool.apply_async(parse, (Parser, url, raw_filename, parsed_filename))))
+        with open('urlcache.txt', 'r') as f:
+            for line in f:
+                url = line.strip()
+                if not url:
+                    continue
+                count = count + 1
+                raw_filename = os.path.join('staging', url.rstrip('/').split('/')[-1])
+                if not raw_filename:
+                    print('Bad raw_filename:', url, file=sys.stderr)
+                    continue
+                if not os.path.exists(raw_filename):
+                    print('File does not exist:', raw_filename, file=sys.stderr)
+                    continue
+                parsed_filename = os.path.join('book', '{:04d}.html'.format(count))
+                Parser = parsers.get_parser_by_url(url)
+                jobs.append((raw_filename, pool.apply_async(parse, (Parser, url, raw_filename, parsed_filename))))
         pool.close()
 
         # Complete the parsing jobs

@@ -13,42 +13,42 @@ import sys
 import uuid
 
 def main(args):
-	if not os.path.exists('bookinfo.txt'):
-		print('No bookinfo.txt found', file=sys.stderr)
-		sys.exit(1)
-	if not os.path.exists('chapterlist.txt'):
-		print('No chapterlist.txt found', file=sys.stderr)
-		sys.exit(1)
+    if not os.path.exists('bookinfo.txt'):
+        print('No bookinfo.txt found', file=sys.stderr)
+        sys.exit(1)
+    if not os.path.exists('chapterlist.txt'):
+        print('No chapterlist.txt found', file=sys.stderr)
+        sys.exit(1)
 
-	# Get the title and author
-	title = str()
-	author = str()
-	with open('bookinfo.txt', 'r') as ifile:
-		title = ifile.readline().strip()
-		author = ifile.readline().strip()
+    # Get the title and author
+    title = str()
+    author = str()
+    with open('bookinfo.txt', 'r') as ifile:
+        title = ifile.readline().strip()
+        author = ifile.readline().strip()
 
-	# Get the chapter info
-	chapterInfo = list()
-	with open('chapterlist.txt', 'r') as ifile:
-		for line in ifile:
-			line = line.strip()
-			if not line: continue
-			filename, ctitle = line.split(' ', 1)
-			chapterInfo.append((filename, ctitle))
+    # Get the chapter info
+    chapter_info = list()
+    with open('chapterlist.txt', 'r') as ifile:
+        for line in ifile:
+            line = line.strip()
+            if not line: continue
+            filename, ctitle = line.split(' ', 1)
+            chapter_info.append((filename, ctitle))
 
-	# Get the cover image
-	cover_img = None
-	if os.path.exists('cover.jpg'):
-		with open('cover.jpg', 'rb') as ifile:
-			cover_img = ifile.read()
+    # Get the cover image
+    cover_img = None
+    if os.path.exists('cover.jpg'):
+        with open('cover.jpg', 'rb') as ifile:
+            cover_img = ifile.read()
 
-	# Build the EPUB
-	print('Title:', title)
-	print('Author:', author)
-	print('Chapters:', len(chapterInfo))
-	print('Building epub ...')
-	buildEpub(title, author, chapterInfo, cover_img=cover_img)
-	print('Complete')
+    # Build the EPUB
+    print('Title:', title)
+    print('Author:', author)
+    print('Chapters:', len(chapter_info))
+    print('Building epub ...')
+    build_epub(title, author, chapter_info, cover_img=cover_img)
+    print('Complete')
 
 # Define css style
 CSS_STYLE = """
@@ -75,7 +75,7 @@ ol > li:first-child {
 }
 """
 
-def buildEpub(title, author, chapterInfo, cover_img=None, gen_toc=True):
+def build_epub(title, author, chapterInfo, cover_img=None, gen_toc=True):
 
     # Create book object
     book = epub.EpubBook()
@@ -117,4 +117,4 @@ def buildEpub(title, author, chapterInfo, cover_img=None, gen_toc=True):
         subprocess.run(['ebook-convert.exe', '{}.epub'.format(title), '{}.azw3'.format(title), '--no-inline-toc'], shell=True, check=True)
 
 if __name__ == '__main__':
-	main(sys.argv[1:])
+    main(sys.argv[1:])
