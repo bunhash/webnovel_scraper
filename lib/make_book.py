@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 # @author bunhash
 # @email bunhash@bhmail.me
@@ -6,6 +6,7 @@
 # Makes the EPUB from the parsed chapters
 #
 
+from filemanager import BookInfo, ChapterList
 from ebooklib import epub
 import os
 import subprocess
@@ -13,28 +14,11 @@ import sys
 import uuid
 
 def main(args):
-    if not os.path.exists('bookinfo.txt'):
-        print('No bookinfo.txt found', file=sys.stderr)
-        sys.exit(1)
-    if not os.path.exists('chapterlist.txt'):
-        print('No chapterlist.txt found', file=sys.stderr)
-        sys.exit(1)
-
     # Get the title and author
-    title = str()
-    author = str()
-    with open('bookinfo.txt', 'r') as ifile:
-        title = ifile.readline().strip()
-        author = ifile.readline().strip()
+    title, author, _ = BookInfo.read()
 
     # Get the chapter info
-    chapter_info = list()
-    with open('chapterlist.txt', 'r') as ifile:
-        for line in ifile:
-            line = line.strip()
-            if not line: continue
-            filename, ctitle = line.split(' ', 1)
-            chapter_info.append((filename, ctitle))
+    chapter_info = ChapterList.read()
 
     # Get the cover image
     cover_img = None
@@ -75,7 +59,7 @@ ol > li:first-child {
 }
 """
 
-def build_epub(title, author, chapterInfo, cover_img=None, gen_toc=True):
+def build_epub(title, author, chapter_info, cover_img=None, gen_toc=True):
 
     # Create book object
     book = epub.EpubBook()
@@ -99,9 +83,9 @@ def build_epub(title, author, chapterInfo, cover_img=None, gen_toc=True):
     if gen_toc: book.toc = list()
 
     # Add the chapters
-    for filename, ctitle in chapterInfo:
+    for filename, ctitle in chapter_info:
         chapter = epub.EpubHtml(title=ctitle, file_name='{}.xhtml'.format(filename.rstrip('.html')))
-        with open(os.path.join(filename), 'rb') as ifile:
+        with open(filename, 'rb') as ifile:
             chapter.set_content(ifile.read())
         book.add_item(chapter)
         if gen_toc: book.toc.append(chapter)

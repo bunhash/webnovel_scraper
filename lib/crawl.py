@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 # @author bunhash
 # @email bunhash@bhmail.me
@@ -6,88 +6,86 @@
 # Downloads the chapters by crawling
 #
 
+from client import Client, ProxyClient
 from driver import Driver
+from filemanager import UrlCache
+
+import argparse
 import os
-import random
 import parsers
+import proxies
+import queue
+import random
 import sys
+import threading
 import time
 
-def read_lines(filename):
-    lines = list()
-    with open(filename, 'r') as ifile:
-        for line in ifile:
-            line = line.strip()
-            if not line: continue
-            lines.append(line)
-    return lines
-
-def get_staging_file(url):
-    filename = url.rstrip('/').rsplit("/", 1)[1]
-    if not filename:
-        raise Exception('no filename found')
-    return os.path.join('staging', filename)
-
 def main(args):
-    if len(args) > 0:
-        urls = args
-    else:
-        if not os.path.exists('urlcache.txt'):
-            print('No urlcache.txt found', file=sys.stderr)
-            sys.exit(1)
-
-        # Read URLs from urlcache.txt
-        urls = read_lines('urlcache.txt')
+    # Read URLs
+    urls = UrlCache.read()
     
     # Create staging directory
-    if not os.path.exists('staging'):
-        os.mkdir('staging')
+    if not os.path.exists(UrlCache.directory):
+        os.mkdir(UrlCache.directory)
 
     if len(urls) > 0:
         # Load the parser
-        Parser = parsers.get_parser_by_url(urls[0])
+        if args.selenium:
+            Parser = parsers.get_parser_by_url(urls[0], parsers.ParserType.SELENIUM)
+            Crawler(Parser, Parser(Driver()), urls).start()
+        else:
+            Parser = parsers.get_parser_by_url(urls[0], parsers.ParserType.SOLVERR)
+            Crawler(Parser, Parser(Client(solver=args.flaresolverr)), urls).start()
 
-        # Load the driver
-        driver = Driver()
+class Crawler:
 
-        # Download everything we know about
-        for url in urls:
-            staging_file = get_staging_file(url)
-            if os.path.exists(staging_file):
-                print(f'Using cached {url}')
-            else:
-                print(f'Downloading {url}')
-                time.sleep(random.randrange(10, 200) / 100)
-                page = Parser.get_chapter(driver, url)
+    def __init__(self, Parser, client, urls):
+        self._Parser = Parser
+        self._client = client
+        self._urls = urls
+
+    def _download(self, count, url, staging_file, attempts=3):
+        for _ in range(attempts):
+            try:
+                print('({:4d}) Downloading {}'.format(count, url))
+                page = self._client.get_chapter(url)
                 with open(staging_file, 'wb') as ofile:
                     ofile.write(page)
+                return page
+            except KeyboardInterrupt as e:
+                raise e
+            except Exception as e:
+                print('({:4d}) Error downloading {}'.format(count, url))
 
-        # Crawl to get the rest (redownload last page)
+    def start(self, maxattempts=3):
+        count = 0
+        for url in self._urls:
+            count = count + 1
+            staging_file = UrlCache.get_filename(url, index=(count - 1))
+            if os.path.exists(staging_file):
+                print('({:4d}) Using cached {}'.format(count, url))
+            else:
+                time.sleep((random.random() * 1.5) + 0.5)
+                _ = self._download(count, url, staging_file, attempts=maxattempts)
         try:
-            cur_link = urls[-1]
-            while cur_link:
-                # Download the page
-                time.sleep(random.randrange(10, 200) / 100)
-                print(f'Downloading {cur_link}')
-                cur_page = Parser.get_chapter(driver, cur_link)
-
-                # Write the page
-                staging_file = get_staging_file(cur_link)
-                with open(staging_file, 'wb') as ofile:
-                    ofile.write(cur_page)
+            url = self._urls[-1]
+            while url:
+                time.sleep((random.random() * 1.5) + 0.5)
+                page = self._download(count, url, UrlCache.get_filename(url, index=(count - 1)), attempts=maxattempts)
 
                 # Get next page
-                next_link = Parser.next_page(cur_page)
-                if next_link:
-                    urls.append(next_link)
+                next_url = self._Parser.next_page(page)
+                if next_url:
+                    self._urls.append(next_url)
 
                 # Set next link (could be None)
-                cur_link = next_link
+                url = next_url
+                count = count + 1
         finally:
-            # Write the new urlcache.txt
-            with open('urlcache.txt', 'w') as ofile:
-                for url in urls:
-                    ofile.write(f'{url}\n')
+            UrlCache.write(self._urls)
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    parser = argparse.ArgumentParser(prog='crawl', description='downloads chapters by crawling')
+    parser.add_argument('-s', '--selenium', action='store_true', default=False, help='use local selenium driver')
+    parser.add_argument('-f', '--flaresolverr', type=str, metavar='SOLVER', default='http://localhost:8191/v1', help='use flaresolverr server (default)')
+    main(parser.parse_args())

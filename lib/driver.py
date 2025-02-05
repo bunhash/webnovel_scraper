@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 # @author bunhash
 # @email bunhash@bhmail.me
@@ -23,8 +23,11 @@ class Driver:
         self._driver = uc.Chrome(options=options, use_subprocess=False)
 
     def __del__(self):
-        self._driver.close()
-        self._driver.quit()
+        try:
+            self._driver.close()
+            self._driver.quit()
+        except:
+            pass
 
     def get(self, url):
         self._driver.get(url)
@@ -32,21 +35,27 @@ class Driver:
     def click(self, element):
         time.sleep(random.randrange(10, 200) / 100)
         element.click()
+
+    def current_url(self):
+        return self._driver.current_url
+
+    def add_cookie(self, cookie):
+        self._driver.add_cookie(cookie)
     
     def page_source(self):
         return self._driver.page_source.encode('utf-8', errors='ignore')
 
-    def wait_for(self, tup, timeout=30):
+    def wait_for(self, tup, timeout=60):
         return WebDriverWait(self._driver, timeout).until(EC.presence_of_element_located(tup))
 
-    def wait_for_tag(self, tag, timeout=30):
+    def wait_for_tag(self, tag, timeout=60):
         return self.wait_for((By.TAG_NAME, tag), timeout=timeout)
 
-    def wait_for_class_name(self, name, timeout=30):
+    def wait_for_class_name(self, name, timeout=60):
         return self.wait_for((By.CLASS_NAME, name), timeout=timeout)
 
-    def wait_for_id(self, el_id, timeout=30):
+    def wait_for_id(self, el_id, timeout=60):
         return self.wait_for((By.ID, el_id), timeout=timeout)
 
-    def wait_for_xpath(self, xpath, timeout=30):
+    def wait_for_xpath(self, xpath, timeout=60):
         return self.wait_for((By.XPATH, xpath), timeout=timeout)

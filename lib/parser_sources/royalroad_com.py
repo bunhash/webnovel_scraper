@@ -9,55 +9,96 @@
 from bs4 import BeautifulSoup, NavigableString
 from selenium.webdriver.common.by import By
 
+COPYRIGHT_TRIGGER_LENGTH = 200
+COPYRIGHT_TRIGGER_THRESHOLD = 8
+COPYRIGHT_TRIGGERS = [
+    # Big red flags
+    ('amazon', 6),
+    ('royal road', 6),
+
+    # Actions
+    ('lifted', 1),
+    ('misappropriated', 2),
+    ('pilfered', 2),
+    ('report', 3),
+    ('stolen', 2),
+    ('support', 1),
+    ('taken', 2),
+
+    # Access wording
+    ('authorization', 3),
+    ('consent', 1),
+    ('genuine', 2),
+    ('illegal', 2),
+    ('illicit', 3),
+    ('infringe', 3),
+    ('official', 1),
+    ('original', 1),
+    ('permission', 1),
+    ('prefer', 1),
+    ('unauthorized', 3),
+    ('unlawful', 3),
+    ('violation', 2),
+
+    # Book synonyms
+    ('content', 2),
+    ('fiction', 2),
+    ('instance', 1),
+    ('narrative', 3),
+    ('novel', 3),
+    ('publication', 3),
+    ('publish', 3),
+    ('stories', 2),
+    ('story', 2),
+    ('tale', 2),
+    ('text', 1),
+    ('usage', 1),
+
+    # Misc flags
+    ('author', 1),
+    ('creativ', 2),
+    ('occurrence', 1),
+    ('site', 3),
+    ('platform', 2),
+]
+
+def is_copyright_phrase(el):
+    """
+    High enough success of catching annoying infringement phrases.
+
+    I haven't noticed a false positive yet.
+    """
+    text = el.get_text().lower()
+    if len(text) > COPYRIGHT_TRIGGER_LENGTH:
+        return False
+    flagged = 0
+    for trigger, weight in COPYRIGHT_TRIGGERS:
+        if trigger in text:
+            flagged = flagged + weight
+    return flagged >= COPYRIGHT_TRIGGER_THRESHOLD
+
 class Parser:
 
     @staticmethod
-    def load_book_page(driver, url):
-        driver.get(url)
+    def parse_book_info(html):
+        soup = BeautifulSoup(html, 'lxml')
+        story_div = soup.find('div', {'class' : 'fic-title'})
+        title_h1 = story_div.find('h1')
+        spans = story_div.find_all('span')
+        author_span = spans[1]
 
-    @staticmethod
-    def get_title(driver):
-        story_div = driver.wait_for_class_name('fic-title')
-        title_h1 = story_div.find_element(By.XPATH, './/div/h1')
-        return title_h1.text.strip()
+        title = title_h1.text.strip()
+        author = author_span.text.strip()
 
-    @staticmethod
-    def get_author(driver):
-        story_div = driver.wait_for_class_name('fic-title')
-        author_span = story_div.find_element(By.XPATH, './/div/h4/span[2]')
-        return author_span.text.strip()
+        # Encode both
+        title = title.encode('ascii', errors='ignore')
+        if len(title) == 0:
+            title = b'???'
+        author = author.encode('ascii', errors='ignore')
+        if len(author) == 0:
+            author = b'???'
 
-    @staticmethod
-    def get_chapterlist(driver):
-        chapterlist = list()
-        while True:
-
-            # Get all chapters on the page
-            chapter_tab = driver.wait_for_id('chapters')
-            tbody = chapter_tab.find_element(By.TAG_NAME, 'tbody')
-            for row in tbody.find_elements(By.TAG_NAME, 'tr'):
-                link = row.find_element(By.TAG_NAME, 'a')
-                chapterlist.append(link.get_attribute('href'))
-
-            # Go to next page
-            navigation_bar = driver.wait_for_class_name('pagination-small')
-            arrows = navigation_bar.find_elements(By.CLASS_NAME, 'nav-arrow')
-            if len(arrows) == 2:
-                arrows[1].click()
-            else:
-                try:
-                    right_arrow = arrows[0].find_element(By.CLASS_NAME, 'fa-chevron-right')
-                    right_arrow.click()
-                except:
-                    break
-
-        return chapterlist
-
-    @staticmethod
-    def get_chapter(driver, url):
-        driver.get(url)
-        content = driver.wait_for_class_name('chapter-page')
-        return content.get_attribute('innerHTML').encode('utf-8')
+        return title.decode('ascii'), author.decode('ascii')
 
     @staticmethod
     def parse_chapter(html):
@@ -96,7 +137,10 @@ class Parser:
 
         # Add paragraphs
         for p in paragraphs:
-            chapter.body.append(p)
+            if not is_copyright_phrase(p):
+                chapter.body.append(p)
+            #else:
+            #    print(f'found: {p.text}')
         
         # Return chapter title and chapter html
         return title.encode('utf-8', errors='ignore'), chapter.encode('utf-8', errors='ignore')
@@ -113,3 +157,64 @@ class Parser:
                     return f'https://www.royalroad.com{url}'
                 return url
         return None
+
+class SolverParser(Parser):
+
+    def __init__(self, client):
+        self._client = client
+
+    def get_book_info_page(self, url):
+        raise Exception('not implemented for now')
+
+    def get_chapterlist(self, url, html):
+        raise Exception('not implemented for now')
+
+    def get_chapter(self, url):
+        res = self._client.get(url)
+        if b'chapter-content' in res:
+            return res
+        raise Exception('No chapter found')
+
+class SeleniumParser(Parser):
+
+    def __init__(self, driver):
+        self._driver = driver
+
+    def get_book_info_page(self, url):
+        self._driver.get(url)
+        _ = self._driver.wait_for_class_name('fic-title')
+        _ = self._driver.wait_for_id('chapters')
+        return self._driver.page_source()
+
+    def get_chapterlist(self, url, html):
+        if self._driver.current_url() != url:
+            self._driver.get(url)
+
+        chapterlist = list()
+        while True:
+
+            # Get all chapters on the page
+            chapter_tab = self._driver.wait_for_id('chapters')
+            tbody = chapter_tab.find_element(By.TAG_NAME, 'tbody')
+            for row in tbody.find_elements(By.TAG_NAME, 'tr'):
+                link = row.find_element(By.TAG_NAME, 'a')
+                chapterlist.append(link.get_attribute('href'))
+
+            # Go to next page
+            navigation_bar = self._driver.wait_for_class_name('pagination-small')
+            arrows = navigation_bar.find_elements(By.CLASS_NAME, 'nav-arrow')
+            if len(arrows) == 2:
+                arrows[1].click()
+            else:
+                try:
+                    right_arrow = arrows[0].find_element(By.CLASS_NAME, 'fa-chevron-right')
+                    right_arrow.click()
+                except:
+                    break
+
+        return chapterlist
+
+    def get_chapter(self, url):
+        self._driver.get(url)
+        _ = self._driver.wait_for_class_name('chapter-content')
+        return self._driver.page_source()

@@ -20,6 +20,9 @@ print_usage() {
     echo "  download      Downloads the chapters"
     echo "  parse         Parses the chapters"
     echo "  build         Builds the books"
+    echo "  start         Starts the FlareSolver server"
+    echo "  stop          Stops the FlareSolver server"
+    echo "  logs          Prints the FlareSolver server logs"
 }
 
 COMMAND="$1"
@@ -32,14 +35,29 @@ case "${COMMAND}" in
         python "${LIB_DIR}/crawl.py" "$@"
         ;;
     download)
-        python "${LIB_DIR}/download.py"
+        python "${LIB_DIR}/download.py" "$@"
         ;;
     parse)
-        python "${LIB_DIR}/parse_chapters.py"
+        python "${LIB_DIR}/parse_chapters.py" "$@"
         ;;
     build)
-        python "${LIB_DIR}/make_book.py"
+        python "${LIB_DIR}/make_book.py" "$@"
         ebook-convert "$(head -n1 bookinfo.txt).epub" "$(head -n1 bookinfo.txt).azw3" --no-inline-toc
+        ;;
+    start)
+        cd "${SRC_DIR}"
+        docker compose up -d
+        ;;
+    stop)
+        cd "${SRC_DIR}"
+        docker compose down
+        ;;
+    logs)
+        cd "${SRC_DIR}"
+        docker compose logs -f
+        ;;
+    rename)
+        python "${LIB_DIR}/rename.py" "$@"
         ;;
     *)
         print_usage
